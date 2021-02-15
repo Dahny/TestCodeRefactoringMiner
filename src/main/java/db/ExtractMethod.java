@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class ExtractMethod extends RefactoringData {
 
+    public int extractMethodId;
     public String methodName;
     public int extractedLines;
     public int extractedMethodLoc;
@@ -42,7 +43,6 @@ public class ExtractMethod extends RefactoringData {
         super();
         this.commitId = refactoringData.commitId;
         this.commitDate = refactoringData.commitDate;
-        this.className = refactoringData.className;
         this.refactoringType = refactoringData.refactoringType;
         this.refactoringSummary = refactoringData.refactoringSummary;
     }

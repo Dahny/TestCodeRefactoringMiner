@@ -116,17 +116,17 @@ public class Main {
             for (ImmutablePair<String, String> classInfo : involvedClasses) {
                 // Check if it is a test file
                 if(Utils.isTest(classInfo.getLeft())) {
-                    mainLogger.log(Level.INFO, String.format("involved classes are: %s", classInfo.getLeft()));
-                    mainLogger.log(Level.INFO, String.format("commitdate: %s", currentCommit.getCommitTime()));
+                    mainLogger.log(Level.DEBUG, String.format("involved classes are: %s", classInfo.getLeft()));
+                    mainLogger.log(Level.DEBUG, String.format("commitdate: %s", currentCommit.getCommitTime()));
 
-                    RefactoringData refactoringData = new RefactoringData(commitId, classInfo.getRight(),
-                            refactoring.toString(), refactoring.getRefactoringType().getDisplayName(),
-                            currentCommit.getCommitTime());
+                    RefactoringData refactoringData = new RefactoringData(commitId, refactoring.toString(),
+                            refactoring.getRefactoringType().getDisplayName(),
+                            currentCommit.getFullMessage(), currentCommit.getCommitTime());
 
                     // If the refactoring is an extract method we get the relevant data
                     // Else we just save it as a 'default' refactoring
                     if (refactoring.getRefactoringType().getDisplayName().equals("Extract Method")) {
-                        mainLogger.log(Level.INFO, String.format("Extract Method found on commit: %s", commitId));
+                        mainLogger.log(Level.DEBUG, String.format("Extract Method found on commit: %s", commitId));
                         ExtractMethod extractMethod = new ExtractMethod(refactoringData);
                         analyzeExtraction((ExtractOperationRefactoring) refactoring, extractMethod);
                     } else {
@@ -135,6 +135,10 @@ public class Main {
                 }
             }
         }
+    }
+
+    public static void analyzeLifetimeClass(){
+
     }
 
     /**
