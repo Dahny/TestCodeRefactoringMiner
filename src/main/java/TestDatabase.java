@@ -1,6 +1,11 @@
 import db.*;
 import org.hibernate.SessionFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class TestDatabase {
 
     public static void main(String[] args) {
@@ -22,5 +27,20 @@ public class TestDatabase {
         em.setWmcExtractedLines(4);
 
         dbOperator.makeTransaction(em);
+
+//        Path tempDirWithPrefix = null;
+//        try {
+//            // Create temp directory to run CK on
+//            Path path = new File("").toPath().toAbsolutePath();
+//            System.out.println(path);
+//            tempDirWithPrefix = Files.createTempDirectory(path, "tmpFiles");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        System.out.println(tempDirWithPrefix);
+//        boolean deleted = tempDirWithPrefix.toFile().delete();
+//        System.out.println(deleted);
+
+
     }
 }

@@ -31,7 +31,7 @@ public class MetricAnalyzer {
     public RefactoringData currentRefactoringData;
     public ExtractMethod currentExtractMethod;
     public Logger analyzerLogger = LogManager.getLogger(MetricAnalyzer.class);
-    public final String tempDir = "tmpfiles/";
+    public final String tempDir = "tmpFiles";
     public final String tempRepoDir = "tmp/repo";
     public final String extractedLinesFileName = "ExtractedLines.Java";
 
@@ -52,7 +52,7 @@ public class MetricAnalyzer {
 
         for (ImmutablePair<String, String> classInfo : involvedClasses) {
             // Check if it is a test file
-            if(Utils.isTest(classInfo.getLeft())) {
+            //if(Utils.isTest(classInfo.getLeft())) {
                 analyzerLogger.debug(String.format("involved classes are: %s", classInfo.getLeft()));
                 analyzerLogger.debug(String.format("commitdate: %s", currentCommit.getCommitTime()));
 
@@ -76,7 +76,7 @@ public class MetricAnalyzer {
                     analyzeMetrics(extractRefactoring.getSourceOperationAfterExtraction().getName(),
                             extractRefactoring.getExtractedCodeFragmentsToExtractedOperation());
                 }
-            }
+           // }
             else{
                 analyzerLogger.debug("Skipping " + refactoring.getName() + " because it is not a test Refactoring");
                 break;
@@ -91,8 +91,10 @@ public class MetricAnalyzer {
 
         Path tempDirWithPrefix = null;
         try {
+            // Get absolute project location
+            Path absolutePath = new File("").toPath().toAbsolutePath();
             // Create temp directory to run CK on
-            tempDirWithPrefix = Files.createTempDirectory(tempDir);
+            tempDirWithPrefix = Files.createTempDirectory(absolutePath, tempDir);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -102,7 +104,7 @@ public class MetricAnalyzer {
         Path refactoringClassFile = new File(tempRepoDir + "/" + classLocation).toPath().toAbsolutePath();
 
         // Create new file for extracted lines of code
-        Utils.createCustomJavaFile(tempDirWithPrefix + extractedLinesFileName, extractedLines);
+        Utils.createCustomJavaFile(tempDirWithPrefix + "/" + extractedLinesFileName, extractedLines);
         try {
             //Move refactorng class file to temp location
             Files.move(refactoringClassFile, tempDirWithPrefix.toAbsolutePath(), StandardCopyOption.REPLACE_EXISTING);
@@ -133,6 +135,10 @@ public class MetricAnalyzer {
                 e.printStackTrace(System.err);
             }
         });
+
+        // Clean temp directory
+        boolean deleted = tempDirWithPrefix.toFile().delete();
+        analyzerLogger.debug("TempDir was removed: " + deleted);
     }
 
     //TODO

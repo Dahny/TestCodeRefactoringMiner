@@ -85,7 +85,7 @@ public class Utils {
             writer.write("public void extractedLines() {");
             writer.newLine();
             for(AbstractCodeFragment fragment: extractedLines){
-                writer.write(fragment.codeRange().getCodeElement());
+                writer.write(fragment.getString());
                 writer.newLine();
             }
             writer.write("}");
