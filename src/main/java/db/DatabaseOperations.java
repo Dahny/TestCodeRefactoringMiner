@@ -10,6 +10,7 @@ public class DatabaseOperations {
         this.session = session;
     }
 
+    // TODO make this transaction cleaner
     public void makeTransaction(Object obj) {
         Transaction t = session.beginTransaction();
         session.persist(obj);

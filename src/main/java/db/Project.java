@@ -19,6 +19,8 @@ public class Project {
 
     // TODO add more project info
 
+    public Project (){}
+
     public Project(String name){
         this.projectName = name;
     }

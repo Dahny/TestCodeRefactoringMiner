@@ -129,7 +129,8 @@ public class Main {
             FileUtils.deleteDirectory(new File(tempRepoDir));
             mainLogger.info("done removing " + projectName);
         } catch (IOException e) {
-            mainLogger.error("Error while removing the repository: " + e.getStackTrace());
+            mainLogger.error("Error while removing the repository: ");
+            e.printStackTrace();
         }
     }
 

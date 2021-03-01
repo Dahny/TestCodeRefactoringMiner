@@ -24,6 +24,8 @@ public class ClassCommitData {
     @Column(name = "isExtractCommit")
     public boolean isExtractCommit;
 
+    public ClassCommitData() { }
+
     public ClassCommitData(
             String commitDate,
             boolean isCreated,

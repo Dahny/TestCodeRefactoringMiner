@@ -42,6 +42,9 @@ public class RefactoringData {
     @Column(name = "commitDate")
     public int commitDate;
 
+
+    public RefactoringData() {}
+
     public RefactoringData(Project project){
         this.project = project;
     }

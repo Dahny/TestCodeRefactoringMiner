@@ -11,6 +11,7 @@ import java.util.Properties;
 public class HiberNateSettings {
     private static SessionFactory sessionFactory;
 
+    // TODO make database init more modular
     public static SessionFactory getSessionFactory() {
         if(sessionFactory == null){
             try {
@@ -28,7 +29,7 @@ public class HiberNateSettings {
 
                 settings.put(Environment.CURRENT_SESSION_CONTEXT_CLASS, "thread");
 
-                //settings.put(Environment.HBM2DDL_AUTO, "create-drop");
+                settings.put(Environment.HBM2DDL_AUTO, "create");
 
                 configuration.setProperties(settings);
 
