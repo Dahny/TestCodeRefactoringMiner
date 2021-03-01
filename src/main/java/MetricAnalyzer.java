@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 
@@ -52,7 +53,7 @@ public class MetricAnalyzer {
 
         for (ImmutablePair<String, String> classInfo : involvedClasses) {
             // Check if it is a test file
-            //if(Utils.isTest(classInfo.getLeft())) {
+            if(Utils.isTest(classInfo.getLeft())) {
                 analyzerLogger.debug(String.format("involved classes are: %s", classInfo.getLeft()));
                 analyzerLogger.debug(String.format("commitdate: %s", currentCommit.getCommitTime()));
 
@@ -76,7 +77,7 @@ public class MetricAnalyzer {
                     analyzeMetrics(extractRefactoring.getSourceOperationAfterExtraction().getName(),
                             extractRefactoring.getExtractedCodeFragmentsToExtractedOperation());
                 }
-           // }
+            }
             else{
                 analyzerLogger.debug("Skipping " + refactoring.getName() + " because it is not a test Refactoring");
                 break;
@@ -101,13 +102,17 @@ public class MetricAnalyzer {
 
         // Fetch refactoring class file
         String classLocation = currentExtractMethod.getRefactoringData().fileLoc;
-        Path refactoringClassFile = new File(tempRepoDir + "/" + classLocation).toPath().toAbsolutePath();
+        String[] splitted = classLocation.split("/");
+        String className = splitted[splitted.length - 1];
+        Path source = new File(tempRepoDir + "/" + classLocation).toPath().toAbsolutePath();
+        Path target = new File(tempDirWithPrefix.toString()
+                + "/" + className).toPath().toAbsolutePath();
 
         // Create new file for extracted lines of code
         Utils.createCustomJavaFile(tempDirWithPrefix + "/" + extractedLinesFileName, extractedLines);
         try {
             //Move refactorng class file to temp location
-            Files.move(refactoringClassFile, tempDirWithPrefix.toAbsolutePath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -137,8 +142,15 @@ public class MetricAnalyzer {
         });
 
         // Clean temp directory
-        boolean deleted = tempDirWithPrefix.toFile().delete();
-        analyzerLogger.debug("TempDir was removed: " + deleted);
+        try {
+            Files.walk(tempDirWithPrefix)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        analyzerLogger.debug("TempDir was removed");
     }
 
     //TODO
