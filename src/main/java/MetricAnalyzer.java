@@ -46,38 +46,46 @@ public class MetricAnalyzer {
      * @param commitId The relevant commitId of the refactoring
      */
     public void handleRefactoring(Refactoring refactoring, String commitId, RevCommit currentCommit ){
-        // Init data storage
         Set<ImmutablePair<String, String>> involvedClasses = refactoring.getInvolvedClassesAfterRefactoring();
 
-        if(involvedClasses.size() > 1){
-            // TODO We have te get separate metrics in case more classes are involved?
-        } else {
-            for (ImmutablePair<String, String> classInfo : involvedClasses) {
-                // Check if it is a test file
-                if(Utils.isTest(classInfo.getLeft())) {
-                    analyzerLogger.debug(String.format("involved classes are: %s", classInfo.getLeft()));
-                    analyzerLogger.debug(String.format("commitdate: %s", currentCommit.getCommitTime()));
+        for (ImmutablePair<String, String> classInfo : involvedClasses) {
+            // Check if it is a test file
+            if(Utils.isTest(classInfo.getLeft())) {
+                analyzerLogger.debug(String.format("involved classes are: %s", classInfo.getLeft()));
+                analyzerLogger.debug(String.format("commitdate: %s", currentCommit.getCommitTime()));
 
-                    RefactoringData refactoringData = new RefactoringData(classInfo.getLeft(), classInfo.getRight(),
-                            currentCommit.getName(), refactoring.toString(),
-                            refactoring.getRefactoringType().getDisplayName(), currentCommit.getFullMessage(),
-                            currentCommit.getCommitTime(), project);
+                currentRefactoringData = new RefactoringData(classInfo.getLeft(), classInfo.getRight(),
+                        currentCommit.getName(), refactoring.toString(),
+                        refactoring.getRefactoringType().getDisplayName(), currentCommit.getFullMessage(),
+                        currentCommit.getCommitTime(), project);
 
-                    // If the refactoring is an extract method we get the relevant data
-                    // Else we just save it as a 'default' refactoring
-                    if (refactoring.getRefactoringType().getDisplayName().equals("Extract Method")) {
-                        analyzerLogger.debug(String.format("Extract Method found on commit: %s", commitId));
-                        ExtractMethod extractMethod = new ExtractMethod(refactoringData);
-                        analyzeExtraction((ExtractOperationRefactoring) refactoring, extractMethod);
-                    } else {
-                        currentRefactoringData = refactoringData;
-                    }
+                // If the refactoring is an extract method we get the relevant data
+                // Else we just save it as a 'default' refactoring
+                if (refactoring.getRefactoringType().getDisplayName().equals("Extract Method")) {
+                    analyzerLogger.debug(String.format("Extract Method found on commit: %s", commitId));
+                    currentExtractMethod = new ExtractMethod(currentRefactoringData);
+                    // cast refactoring as ExtractOperationRefactoring
+                    ExtractOperationRefactoring extractRefactoring = (ExtractOperationRefactoring) refactoring;
+
+                    // Analyze the extracted piece of code
+                    analyzeExtraction(extractRefactoring);
+
+                    // Analyze the metrics of the related class and the extracted piece of code
+                    analyzeMetrics(extractRefactoring.getSourceOperationAfterExtraction().getName(),
+                            extractRefactoring.getExtractedCodeFragmentsToExtractedOperation());
                 }
             }
+            else{
+                analyzerLogger.debug("Skipping " + refactoring.getName() + " because it is not a test Refactoring");
+                break;
+            }
+
+            // TODO Database operation
+
         }
     }
 
-    public void analyzeMetrics(String classLocation, String methodName, Set<AbstractCodeFragment> extractedLines, ExtractMethod data){
+    public void analyzeMetrics(String methodName, Set<AbstractCodeFragment> extractedLines){
         boolean useJars = false;
         int maxAtOnce = 0;
         boolean variablesAndFields = true;
@@ -91,7 +99,9 @@ public class MetricAnalyzer {
         }
 
         // Fetch refactoring class file
+        String classLocation = currentExtractMethod.getRefactoringData().fileLoc;
         Path refactoringClassFile = new File(tempRepoDir + "/" + classLocation).toPath().toAbsolutePath();
+
         // Create new file for extracted lines of code
         Utils.createCustomJavaFile(tempDirWithPrefix + extractedLinesFileName, extractedLines);
         try {
@@ -106,14 +116,14 @@ public class MetricAnalyzer {
             @Override
             public void notify(CKClassResult result) {
                 if(result.getClassName().equals("ExtracedLines")){
-                    data.setWmcExtractedLines(result.getWmc());
+                    currentExtractMethod.setWmcExtractedLines(result.getWmc());
                 } else{
-                    data.setWmcWholeClass(result.getWmc());
+                    currentExtractMethod.setWmcWholeClass(result.getWmc());
                     Optional<CKMethodResult> relMethod = result.getMethod(methodName);
                     if(relMethod.isPresent()){
                         CKMethodResult method = relMethod.get();
-                        data.setMethodName(method.getMethodName());
-                        data.setExtractedMethodLoc(method.getLoc());
+                        currentExtractMethod.setMethodName(method.getMethodName());
+                        currentExtractMethod.setExtractedMethodLoc(method.getLoc());
                     }
                 }
             }
@@ -133,22 +143,18 @@ public class MetricAnalyzer {
 
     /**
      * @param refactoring The refactoring to be analyzed
-     * @param extractMethod The extract method data
      */
-    public void analyzeExtraction(ExtractOperationRefactoring refactoring, ExtractMethod extractMethod){
+    public void analyzeExtraction(ExtractOperationRefactoring refactoring){
         UMLOperationBodyMapper mapper = refactoring.getBodyMapper();
         Set<AbstractCodeMapping> mappings = mapper.getMappings();
-        analyzeMetrics(extractMethod.getRefactoringData().fileLoc,
-                refactoring.getSourceOperationAfterExtraction().getName(),
-                refactoring.getExtractedCodeFragmentsToExtractedOperation(), extractMethod);
 
         // set the amount of LoC of the extracted piece of code
-        extractMethod.setExtractedLines(mappings.size());
+        currentExtractMethod.setExtractedLines(mappings.size());
         for(AbstractCodeMapping mapping : mappings) {
             AbstractCodeFragment fragment1 = mapping.getFragment1();
             if(mapping.isExact()){
                 // TODO test if there is a better way to check assert is in line of code
-                extractMethod.setHasAssertInvolved(fragment1.getString().contains("assert"));
+                currentExtractMethod.setHasAssertInvolved(fragment1.getString().contains("assert"));
                 continue;
             } else{
                 Set<Replacement> replacements = mapping.getReplacements();
@@ -157,11 +163,9 @@ public class MetricAnalyzer {
                     analyzerLogger.debug(String.format("before replacement: %s", valueBefore));
                     String valueAfter = replacement.getAfter();
                     analyzerLogger.debug(String.format("after replacement: %s", valueAfter));
-                    extractMethod.setTypeOfReplacment(replacement.getType().name());
+                    currentExtractMethod.setTypeOfReplacment(replacement.getType().name());
                 }
             }
         }
-        // Add the fetched data to the list
-        currentExtractMethod = extractMethod;
     }
 }
