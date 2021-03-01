@@ -46,6 +46,8 @@ public class MetricAnalyzer {
      * @param commitId The relevant commitId of the refactoring
      */
     public void handleRefactoring(Refactoring refactoring, String commitId, RevCommit currentCommit ){
+        currentExtractMethod = null;
+        currentRefactoringData = null;
         Set<ImmutablePair<String, String>> involvedClasses = refactoring.getInvolvedClassesAfterRefactoring();
 
         for (ImmutablePair<String, String> classInfo : involvedClasses) {
@@ -79,9 +81,6 @@ public class MetricAnalyzer {
                 analyzerLogger.debug("Skipping " + refactoring.getName() + " because it is not a test Refactoring");
                 break;
             }
-
-            // TODO Database operation
-
         }
     }
 

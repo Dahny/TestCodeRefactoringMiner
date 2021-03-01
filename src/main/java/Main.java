@@ -75,12 +75,15 @@ public class Main {
                 try {
                     currentCommit = walker.next();
                     mainLogger.info("currentCommit: " + currentCommit.getName());
+                    mainLogger.info("currentCommit idName: " + currentCommit.getId().getName());
                     mainLogger.info("commitMessage: " + currentCommit.getFullMessage());
                     mainLogger.info("commit: " + currentCommit.getType());
 
-                    // If first commit or merge commit, skip
-                    if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
-                        continue;
+//                    // If first commit or merge commit, skip
+//                    if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
+//                        continue;
+                    mainLogger.info("parent count: " + currentCommit.getParentCount());
+                    mainLogger.info("parents length: " + currentCommit.getParents().length);
 
                     gitService.checkout(currentRepo, currentCommit.name());
 
@@ -90,9 +93,11 @@ public class Main {
                             for (Refactoring ref : refactorings) {
                                 analyzer.handleRefactoring(ref, commitId, currentCommit);
 
+                                // If refactoring type was in test and of type extract method
                                 if(analyzer.currentExtractMethod != null)
                                     dbOperator.makeTransaction(analyzer.currentExtractMethod);
-                                else
+                                // if refactoring was in test
+                                else if(analyzer.currentRefactoringData != null)
                                     dbOperator.makeTransaction(analyzer.currentRefactoringData);
                             }
                         }

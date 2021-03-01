@@ -12,9 +12,16 @@ public class DatabaseOperations {
 
     // TODO make this transaction cleaner
     public void makeTransaction(Object obj) {
-        Transaction t = session.beginTransaction();
-        session.persist(obj);
-        t.commit();
+        try {
+            if(obj != null) {
+                Transaction t = session.beginTransaction();
+                session.persist(obj);
+                t.commit();
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
     }
 
 }
