@@ -71,35 +71,44 @@ public class Main {
             // Init the Analyzer
             MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, curProject);
 
-            // First commit can't have any refactorings
-            try {
-                currentCommit = walker.next();
             while (walker.iterator().hasNext()) {
+                try {
                     currentCommit = walker.next();
-                    gitService.checkout(currentRepo, currentCommit.name());
-
-                    mainLogger.info("repo: " + currentRepo.toString());
                     mainLogger.info("currentCommit: " + currentCommit.getName());
+                    mainLogger.info("commitMessage: " + currentCommit.getFullMessage());
+                    mainLogger.info("commit: " + currentCommit.getType());
+
+                    // If first commit or merge commit, skip
+                    if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
+                        continue;
+
+                    gitService.checkout(currentRepo, currentCommit.name());
 
                     miner.detectAtCommit(currentRepo, currentCommit.getId().getName(), new RefactoringHandler() {
                         @Override
                         public void handle(String commitId, List<Refactoring> refactorings) {
                             for (Refactoring ref : refactorings) {
                                 analyzer.handleRefactoring(ref, commitId, currentCommit);
-                                dbOperator.makeTransaction(analyzer.currentExtractMethod);
-                                dbOperator.makeTransaction(analyzer.currentRefactoringData);
+
+                                if(analyzer.currentExtractMethod != null)
+                                    dbOperator.makeTransaction(analyzer.currentExtractMethod);
+                                else
+                                    dbOperator.makeTransaction(analyzer.currentRefactoringData);
                             }
                         }
                     });
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
+                catch (IOException e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             //refactoringsInProjects.put(projectName, analyzer.currentRefactoringData);
 
             // Clean dir after all commits have ben processed
+            walker.close();
+            currentRepo.close();
             removeRepo(projectName);
         }
     }
