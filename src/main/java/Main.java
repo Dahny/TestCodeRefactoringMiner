@@ -1,4 +1,6 @@
 import db.DatabaseOperations;
+import db.HiberNateSettings;
+import db.Project;
 import db.RefactoringData;
 
 import org.apache.commons.io.FileUtils;
@@ -9,6 +11,7 @@ import org.apache.log4j.Logger;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.hibernate.SessionFactory;
 import org.refactoringminer.api.GitHistoryRefactoringMiner;
 import org.refactoringminer.api.GitService;
 import org.refactoringminer.api.Refactoring;
@@ -23,12 +26,12 @@ import java.util.*;
 public class Main {
 
     public static List<String> repos;
-    public static Map<String, List<RefactoringData>> refactoringsInProjects;
     public static Logger mainLogger;
+    public static SessionFactory sessionFactory;
+    public static DatabaseOperations dbOperator;
     public static RevCommit currentCommit;
     public static Repository currentRepo;
     public static final String tempRepoDir = "tmp/repo";
-    //public static final String tempDir = "tmpfiles/";
 
     public static void main(String[] args) {
         // Init projects
@@ -37,11 +40,13 @@ public class Main {
         // Set Logging settings
         setMainLogger();
 
+        // Setup database
+        initDatabase();
+
         // Init git services for miner
         GitService gitService = new GitServiceImpl();
         GitHistoryRefactoringMiner miner = new GitHistoryRefactoringMinerImpl();
 
-        refactoringsInProjects = new HashMap<>();
         for(String projectName: repos) {
             mainLogger.log(Level.INFO, "cloning repo " + projectName);
             currentRepo = getRepo(projectName, gitService);
@@ -59,8 +64,12 @@ public class Main {
                 continue;
             }
 
+            // Add project to database
+            Project curProject = new Project(projectName);
+            dbOperator.makeTransaction(curProject);
+
             // Init the Analyzer
-            MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, projectName);
+            MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, curProject);
 
             // First commit can't have any refactorings
             try {
@@ -77,6 +86,8 @@ public class Main {
                         public void handle(String commitId, List<Refactoring> refactorings) {
                             for (Refactoring ref : refactorings) {
                                 analyzer.handleRefactoring(ref, commitId, currentCommit);
+                                dbOperator.makeTransaction(analyzer.currentExtractMethod);
+                                dbOperator.makeTransaction(analyzer.currentRefactoringData);
                             }
                         }
                     });
@@ -103,6 +114,12 @@ public class Main {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void initDatabase(){
+        sessionFactory = HiberNateSettings.getSessionFactory();
+        dbOperator = new DatabaseOperations(sessionFactory.openSession());
+        mainLogger.info("Started database session");
     }
 
 

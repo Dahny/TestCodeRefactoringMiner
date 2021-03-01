@@ -36,9 +36,9 @@ public class MetricAnalyzer {
     public final String extractedLinesFileName = "ExtractedLines.Java";
 
 
-    public MetricAnalyzer(Repository repo, String projectName){
+    public MetricAnalyzer(Repository repo, Project curProject){
         this.repository = repo;
-        this.project = new Project(projectName);
+        this.project = curProject;
     }
 
     /**
