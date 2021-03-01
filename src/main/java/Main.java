@@ -1,13 +1,14 @@
 import db.DatabaseOperations;
 import db.HiberNateSettings;
 import db.Project;
-import db.RefactoringData;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.StatusCommand;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -57,6 +58,9 @@ public class Main {
                 Utils.removeDirectory(tempRepoDir);
                 continue;
             }
+            // set git
+            Git git = new Git(currentRepo);
+
             RevWalk walker = Utils.setupRevWalker(currentRepo);
             if(walker == null){
                 mainLogger.info("Skipping " + projectName + "because creating the walker caused an exception");
@@ -75,19 +79,19 @@ public class Main {
                 try {
                     currentCommit = walker.next();
                     mainLogger.info("currentCommit: " + currentCommit.getName());
-                    mainLogger.info("currentCommit idName: " + currentCommit.getId().getName());
                     mainLogger.info("commitMessage: " + currentCommit.getFullMessage());
                     mainLogger.info("commit: " + currentCommit.getType());
-
-//                    // If first commit or merge commit, skip
-//                    if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
-//                        continue;
                     mainLogger.info("parent count: " + currentCommit.getParentCount());
                     mainLogger.info("parents length: " + currentCommit.getParents().length);
 
-                    gitService.checkout(currentRepo, currentCommit.name());
+                    // If first commit or merge commit, skip
+                    if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
+                        continue;
 
-                    miner.detectAtCommit(currentRepo, currentCommit.getId().getName(), new RefactoringHandler() {
+                    //git.checkout(currentRepo, currentCommit.getName());
+                    git.checkout().setName(currentCommit.getName()).call();
+
+                    miner.detectAtCommit(currentRepo, currentCommit.getName(), new RefactoringHandler() {
                         @Override
                         public void handle(String commitId, List<Refactoring> refactorings) {
                             for (Refactoring ref : refactorings) {
@@ -102,11 +106,14 @@ public class Main {
                             }
                         }
                     });
+                    git.clean().call();
+                    currentCommit.reset();
                 }
                 catch (IOException e) {
                     e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
+
                 }
             }
             //refactoringsInProjects.put(projectName, analyzer.currentRefactoringData);

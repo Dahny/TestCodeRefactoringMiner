@@ -51,12 +51,12 @@ public class ExtractMethod {
         this.hasAssertInvolved = hasAssertInvolved;
     }
 
-    public void setWmcWholeClass(int wmcAfter) {
-        this.wmcWholeClass = wmcAfter;
+    public void setWmcWholeClass(int wmc) {
+        this.wmcWholeClass = wmc;
     }
 
-    public void setWmcExtractedLines(int wmcBefore) {
-        this.wmcExtractedLines = wmcBefore;
+    public void setWmcExtractedLines(int wmc) {
+        this.wmcExtractedLines = wmc;
     }
 
     public void setExtractedLines(int extractedLines) {
