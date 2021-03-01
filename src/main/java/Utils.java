@@ -1,15 +1,19 @@
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import gr.uom.java.xmi.UMLOperation;
+import gr.uom.java.xmi.UMLType;
+import gr.uom.java.xmi.decomposition.AbstractCodeFragment;
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Level;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class Utils {
 
@@ -18,15 +22,21 @@ public class Utils {
      * @return initialized JGit walker starting at first commit in master branch
      * @throws IOException
      */
-    public static RevWalk setupRevWalker(Repository repo) throws IOException {
-        RevWalk walker = new RevWalk(repo);
-
+    public static RevWalk setupRevWalker(Repository repo) {
         // TODO Assuming master is always main branch, maybe there is a better way?
-        ObjectId first = repo.resolve("master");
-        walker.markStart(walker.parseCommit(first));
-        // Starting with first commit
-        walker.sort(RevSort.REVERSE);
-        return walker;
+        try {
+            RevWalk walker = new RevWalk(repo);
+            ObjectId first = repo.resolve("master");
+            walker.markStart(walker.parseCommit(first));
+
+            // Starting with first commit
+            walker.sort(RevSort.REVERSE);
+            return walker;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // This should never happen
+        return null;
     }
 
 
@@ -54,6 +64,44 @@ public class Utils {
             e.printStackTrace();
         }
         return repos;
+    }
+
+    public static void removeDirectory(String directory) {
+        try {
+            FileUtils.deleteDirectory(new File(directory));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static File createCustomJavaFile(String path, Set<AbstractCodeFragment> extractedLines) {
+        try {
+            File file = new File(path);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+            // Let's write a custom java file
+            writer.write("Public Class ExtracedLines { " );
+            writer.newLine();
+            writer.write("public void extractedLines() {");
+            writer.newLine();
+            for(AbstractCodeFragment fragment: extractedLines){
+                writer.write(fragment.codeRange().getCodeElement());
+                writer.newLine();
+            }
+            writer.write("}");
+            writer.newLine();
+            writer.write("}");
+            writer.close();
+
+            return file;
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+        //this should never happen
+        return null;
     }
 
 }

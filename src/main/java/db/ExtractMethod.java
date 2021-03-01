@@ -1,62 +1,62 @@
 package db;
 
+import javax.persistence.*;
 import java.sql.Ref;
-import java.util.Date;
 
-public class ExtractMethod extends RefactoringData {
+@Entity
+@Table(name = "extractMethod")
+public class ExtractMethod {
 
-    public int extractMethodId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "extractMethodId")
+    private Long extractMethodId;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "refactoringDataid")
+    private RefactoringData refactoringData;
+
+    @Column(name = "methodName")
     public String methodName;
+
+    @Column(name = "extractedLines")
     public int extractedLines;
+
+    @Column(name = "extractedMethodLoc")
     public int extractedMethodLoc;
-    public int newMethodLoc;
-    public int wmcBefore;
-    public int wmcAfter;
+
+    @Column(name = "wmcExtractedLines")
+    public int wmcExtractedLines;
+
+    @Column(name = "wmcWholeClass")
+    public int wmcWholeClass;
+
+    @Column(name = "hasAssertInvolved")
     public Boolean hasAssertInvolved;
+
+    @Column(name = "typeOfReplacement")
     public String typeOfReplacement;
 
     public ExtractMethod(){
         this.hasAssertInvolved = false;
     }
 
-    public ExtractMethod(int extractedLines,
-                         int extractedMethodLoc,
-                         int newMethodLoc,
-                         String commitId,
-                         String refactoringName,
-                         String className,
-                         String methodName,
-                         String refactoringSummary,
-                         boolean hasAssertInvolved,
-                         int commitDate){
-        super(commitId, refactoringName, className, refactoringSummary, commitDate);
-        this.methodName = methodName;
-        this.extractedLines = extractedLines;
-        this.extractedMethodLoc = extractedMethodLoc;
-        this.newMethodLoc = newMethodLoc;
-        this.hasAssertInvolved = hasAssertInvolved;
+    public ExtractMethod(RefactoringData refactoringData) {
+        this.hasAssertInvolved = false;
+        this.refactoringData = refactoringData;
     }
 
-    public ExtractMethod(
-            RefactoringData refactoringData
-    ) {
-        super();
-        this.commitId = refactoringData.commitId;
-        this.commitDate = refactoringData.commitDate;
-        this.refactoringType = refactoringData.refactoringType;
-        this.refactoringSummary = refactoringData.refactoringSummary;
-    }
 
     public void setHasAssertInvolved(Boolean hasAssertInvolved) {
         this.hasAssertInvolved = hasAssertInvolved;
     }
 
-    public void setWmcAfter(int wmcAfter) {
-        this.wmcAfter = wmcAfter;
+    public void setWmcWholeClass(int wmcAfter) {
+        this.wmcWholeClass = wmcAfter;
     }
 
-    public void setWmcBefore(int wmcBefore) {
-        this.wmcBefore = wmcBefore;
+    public void setWmcExtractedLines(int wmcBefore) {
+        this.wmcExtractedLines = wmcBefore;
     }
 
     public void setExtractedLines(int extractedLines) {
@@ -71,11 +71,11 @@ public class ExtractMethod extends RefactoringData {
         this.methodName = methodName;
     }
 
-    public void setNewMethodLoc(int newMethodLoc) {
-        this.newMethodLoc = newMethodLoc;
-    }
-
     public void setTypeOfReplacment(String typeOfReplacement) {
         this.typeOfReplacement = typeOfReplacement;
+    }
+
+    public RefactoringData getRefactoringData(){
+        return this.refactoringData;
     }
 }
