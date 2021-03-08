@@ -8,7 +8,10 @@ import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.StatusCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -42,7 +45,7 @@ public class Main {
         setMainLogger();
 
         // Setup database
-        initDatabase();
+        setupDatabaseConfig();
 
         // Init git services for miner
         GitService gitService = new GitServiceImpl();
@@ -70,7 +73,7 @@ public class Main {
 
             // Add project to database
             Project curProject = new Project(projectName);
-            dbOperator.makeTransaction(curProject);
+            makeDatabaseTransaction(curProject);
 
             // Init the Analyzer
             MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, curProject);
@@ -88,8 +91,13 @@ public class Main {
                     if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
                         continue;
 
+                    // Check if git status okay for next checkout
+                    checkGitStatus(git);
+
                     //git.checkout(currentRepo, currentCommit.getName());
                     git.checkout().setName(currentCommit.getName()).call();
+
+                    checkGitStatus(git);
 
                     miner.detectAtCommit(currentRepo, currentCommit.getName(), new RefactoringHandler() {
                         @Override
@@ -99,25 +107,22 @@ public class Main {
 
                                 // If refactoring type was in test and of type extract method
                                 if(analyzer.currentExtractMethod != null)
-                                    dbOperator.makeTransaction(analyzer.currentExtractMethod);
+                                    makeDatabaseTransaction(analyzer.currentExtractMethod);
                                 // if refactoring was in test
                                 else if(analyzer.currentRefactoringData != null)
-                                    dbOperator.makeTransaction(analyzer.currentRefactoringData);
+                                    makeDatabaseTransaction(analyzer.currentRefactoringData);
                             }
                         }
                     });
-                    git.clean().call();
                     currentCommit.reset();
                 }
                 catch (IOException e) {
                     e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
-
                 }
             }
-            //refactoringsInProjects.put(projectName, analyzer.currentRefactoringData);
-
+            
             // Clean dir after all commits have ben processed
             walker.close();
             currentRepo.close();
@@ -137,12 +142,30 @@ public class Main {
         return null;
     }
 
-    public static void initDatabase(){
-        sessionFactory = HiberNateSettings.getSessionFactory();
-        dbOperator = new DatabaseOperations(sessionFactory.openSession());
-        mainLogger.info("Started database session");
+    public static void makeDatabaseTransaction(Object data){
+        mainLogger.debug("Starting database transaction");
+        dbOperator = new DatabaseOperations(sessionFactory);
+        dbOperator.makeTransaction(data);
+        mainLogger.debug("Database transaction is done, session is closed");
     }
 
+    public static void setupDatabaseConfig(){
+        mainLogger.info("Starting Database configuration");
+        sessionFactory = HiberNateSettings.getSessionFactory();
+        //dbOperator = new DatabaseOperations(sessionFactory);
+        mainLogger.info("Database configured");
+    }
+
+    public static void checkGitStatus(Git git) throws GitAPIException, InterruptedException {
+        Status status = git.status().call();
+        if(status.isClean())
+            return;
+        else
+            git.clean().setForce(true).call();
+            git.reset().setMode(ResetCommand.ResetType.HARD).call();
+            Thread.sleep(100);
+
+    }
 
     public static void removeRepo(String projectName){
         try {

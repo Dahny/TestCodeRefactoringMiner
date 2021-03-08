@@ -102,8 +102,8 @@ public class MetricAnalyzer {
 
         // Fetch refactoring class file
         String classLocation = currentExtractMethod.getRefactoringData().fileLoc;
-        String[] splitted = classLocation.split("/");
-        String className = splitted[splitted.length - 1];
+        String[] tempSplit = classLocation.split("/");
+        String className = tempSplit[tempSplit.length - 1];
         Path source = new File(tempRepoDir + "/" + classLocation).toPath().toAbsolutePath();
         Path target = new File(tempDirWithPrefix.toString()
                 + "/" + className).toPath().toAbsolutePath();
