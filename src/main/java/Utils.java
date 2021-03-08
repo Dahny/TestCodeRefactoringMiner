@@ -7,11 +7,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -73,6 +75,14 @@ public class Utils {
             e.printStackTrace();
         }
     }
+
+    public static List reverseIterable(Iterable<RevCommit> iterable){
+        List list = new ArrayList<>();
+        iterable.forEach(list::add);
+        Collections.reverse(list);
+        return list;
+    }
+
 
     public static File createCustomJavaFile(String path, Set<AbstractCodeFragment> extractedLines) {
         try {

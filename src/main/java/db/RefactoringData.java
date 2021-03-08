@@ -1,6 +1,7 @@
 package db;
 
 import javax.persistence.*;
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -13,9 +14,6 @@ public class RefactoringData {
 
     @OneToOne(mappedBy = "refactoringData")
     private ExtractMethod extractMethodId;
-
-    @OneToMany(mappedBy = "refactoringData")
-    private Set<ClassCommitData> classCommitDataid;
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "projectId", nullable = false)
@@ -40,7 +38,7 @@ public class RefactoringData {
     public String commitMessage;
 
     @Column(name = "commitDate")
-    public int commitDate;
+    public Date commitDate;
 
 
     public RefactoringData() {}
@@ -56,7 +54,7 @@ public class RefactoringData {
                        String refactoringSummary,
                        String refactoringType,
                        String commitMessage,
-                       int commitDate,
+                       Date commitDate,
                        Project project){
         this.className = className;
         this.fileLoc = fileLoc;

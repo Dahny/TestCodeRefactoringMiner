@@ -76,7 +76,7 @@ public class Main {
             makeDatabaseTransaction(curProject);
 
             // Init the Analyzer
-            MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, curProject);
+            MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, curProject, git);
 
             while (walker.iterator().hasNext()) {
                 try {
@@ -122,7 +122,7 @@ public class Main {
                     e.printStackTrace();
                 }
             }
-            
+
             // Clean dir after all commits have ben processed
             walker.close();
             currentRepo.close();

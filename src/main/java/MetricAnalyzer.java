@@ -2,6 +2,7 @@ import com.github.mauricioaniche.ck.CK;
 import com.github.mauricioaniche.ck.CKClassResult;
 import com.github.mauricioaniche.ck.CKMethodResult;
 import com.github.mauricioaniche.ck.CKNotifier;
+import db.ClassCommitData;
 import db.ExtractMethod;
 import db.Project;
 import db.RefactoringData;
@@ -13,33 +14,41 @@ import gr.uom.java.xmi.diff.ExtractOperationRefactoring;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.refactoringminer.api.GitHistoryRefactoringMiner;
+import org.refactoringminer.api.GitService;
 import org.refactoringminer.api.Refactoring;
+import org.refactoringminer.rm1.GitHistoryRefactoringMinerImpl;
+import org.refactoringminer.util.GitServiceImpl;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class MetricAnalyzer {
     public Repository repository;
     public Project project;
+    public Git git;
     public RefactoringData currentRefactoringData;
     public ExtractMethod currentExtractMethod;
+    public List<ClassCommitData> currentClassCommitData;
     public Logger analyzerLogger = LogManager.getLogger(MetricAnalyzer.class);
     public final String tempDir = "tmpFiles";
     public final String tempRepoDir = "tmp/repo";
     public final String extractedLinesFileName = "ExtractedLines.Java";
 
 
-    public MetricAnalyzer(Repository repo, Project curProject){
+    public MetricAnalyzer(Repository repo, Project curProject, Git git){
         this.repository = repo;
         this.project = curProject;
+        this.git = git;
     }
 
     /**
@@ -49,6 +58,7 @@ public class MetricAnalyzer {
     public void handleRefactoring(Refactoring refactoring, String commitId, RevCommit currentCommit ){
         currentExtractMethod = null;
         currentRefactoringData = null;
+        currentClassCommitData = null;
         Set<ImmutablePair<String, String>> involvedClasses = refactoring.getInvolvedClassesAfterRefactoring();
 
         for (ImmutablePair<String, String> classInfo : involvedClasses) {
@@ -60,7 +70,7 @@ public class MetricAnalyzer {
                 currentRefactoringData = new RefactoringData(classInfo.getLeft(), classInfo.getRight(),
                         currentCommit.getName(), refactoring.toString(),
                         refactoring.getRefactoringType().getDisplayName(), currentCommit.getFullMessage(),
-                        currentCommit.getCommitTime(), project);
+                        currentCommit.getAuthorIdent().getWhen(), project);
 
                 // If the refactoring is an extract method we get the relevant data
                 // Else we just save it as a 'default' refactoring
@@ -76,6 +86,9 @@ public class MetricAnalyzer {
                     // Analyze the metrics of the related class and the extracted piece of code
                     analyzeMetrics(extractRefactoring.getSourceOperationAfterExtraction().getName(),
                             extractRefactoring.getExtractedCodeFragmentsToExtractedOperation());
+
+                    // Analyze the lifetime of the related class
+                    analyzeLifetimeClass();
                 }
             }
             else{
@@ -153,9 +166,26 @@ public class MetricAnalyzer {
         analyzerLogger.debug("TempDir was removed");
     }
 
-    //TODO
-    public static void analyzeLifetimeClass(){
+    //TODO Check if the file is moved instead of created
+    public void analyzeLifetimeClass(){
+        currentClassCommitData = new ArrayList<>();
+        String classPath = currentExtractMethod.getRefactoringData().fileLoc;
+        Iterable<RevCommit> commits = null;
+        try {
+            commits =  git.log().addPath(classPath).call();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        }
 
+        List<RevCommit> orderedList = Utils.reverseIterable(commits);
+        for(int i = 0; i < orderedList.size(); i++){
+            RevCommit commit = orderedList.get(i);
+            Date commitDate = commit.getAuthorIdent().getWhen();
+            currentClassCommitData.add(new ClassCommitData(
+                    commitDate,
+                    i==0,
+                    currentExtractMethod.getRefactoringData().commitDate.equals(commitDate)));
+        }
     }
 
     /**

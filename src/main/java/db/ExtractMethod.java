@@ -2,6 +2,7 @@ package db;
 
 import javax.persistence.*;
 import java.sql.Ref;
+import java.util.Set;
 
 @Entity
 @Table(name = "extractMethod")
@@ -15,6 +16,9 @@ public class ExtractMethod {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "refactoringDataid")
     private RefactoringData refactoringData;
+
+    @OneToMany(fetch=FetchType.LAZY, mappedBy = "extractMethod")
+    private Set<ClassCommitData> classCommitData;
 
     @Column(name = "methodName")
     public String methodName;
@@ -74,6 +78,8 @@ public class ExtractMethod {
     public void setTypeOfReplacment(String typeOfReplacement) {
         this.typeOfReplacement = typeOfReplacement;
     }
+
+    public void setClassCommitData(Set<ClassCommitData> ccd) { this.classCommitData = ccd; }
 
     public RefactoringData getRefactoringData(){
         return this.refactoringData;

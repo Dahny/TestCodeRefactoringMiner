@@ -2,6 +2,7 @@ package db;
 
 import javax.persistence.Table;
 import javax.persistence.*;
+import java.util.Date;
 
 @Entity
 @Table(name = "classCommitData")
@@ -9,30 +10,40 @@ public class ClassCommitData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "classCommitDataid")
-    public Long classCommitDataid;
+    private Long classCommitDataid;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "refactoringDataId", nullable = false)
-    public RefactoringData refactoringData;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "extractMethodId", nullable = false)
+    private ExtractMethod extractMethod;
 
     @Column(name = "commitDate")
-    public String commitDate;
+    private Date commitDate;
 
     @Column(name = "isCreated")
-    public boolean isCreated;
+    private boolean isCreated;
 
     @Column(name = "isExtractCommit")
-    public boolean isExtractCommit;
+    private boolean isExtractCommit;
 
     public ClassCommitData() { }
 
     public ClassCommitData(
-            String commitDate,
+            Date commitDate,
             boolean isCreated,
             boolean isExtractCommit
     ) {
         this.commitDate = commitDate;
         this.isCreated = isCreated;
         this.isExtractCommit = isExtractCommit;
+    }
+
+
+    public void setExtractMethod(ExtractMethod extractMethod) {
+        this.extractMethod = extractMethod;
+    }
+
+    @Override
+    public String toString(){
+        return "[commitDate: " + commitDate + " isCreated: " + isCreated + " isExtractCommit: " + isExtractCommit + "]";
     }
 }
