@@ -145,7 +145,7 @@ public class Main {
     public static void makeDatabaseTransaction(Object data){
         mainLogger.debug("Starting database transaction");
         dbOperator = new DatabaseOperations(sessionFactory);
-        dbOperator.makeTransaction(data);
+        dbOperator.databaseTransaction(data);
         mainLogger.debug("Database transaction is done, session is closed");
     }
 

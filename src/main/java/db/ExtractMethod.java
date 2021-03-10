@@ -17,7 +17,7 @@ public class ExtractMethod {
     @JoinColumn(name = "refactoringDataid")
     private RefactoringData refactoringData;
 
-    @OneToMany(fetch=FetchType.LAZY, mappedBy = "extractMethod")
+    @OneToMany(fetch=FetchType.EAGER, mappedBy = "extractMethod")
     private Set<ClassCommitData> classCommitData;
 
     @Column(name = "methodName")
@@ -84,4 +84,6 @@ public class ExtractMethod {
     public RefactoringData getRefactoringData(){
         return this.refactoringData;
     }
+
+    public Set<ClassCommitData> getClassCommitData() { return this.classCommitData; }
 }

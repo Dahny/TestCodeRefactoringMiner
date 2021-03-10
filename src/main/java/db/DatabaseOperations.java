@@ -4,6 +4,8 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
+import java.sql.Ref;
+
 public class DatabaseOperations {
 
     private Session session;
@@ -14,7 +16,7 @@ public class DatabaseOperations {
 
 
     // TODO make this transaction cleaner
-    public void makeTransaction(Object obj) {
+    private void makeTransaction(Object obj) {
         Transaction transaction = null;
         try {
             // Check if there is actually data for the transaction
@@ -31,6 +33,40 @@ public class DatabaseOperations {
             // close session after the transaction is done
             closeSession();
         }
+    }
+
+    private void extractMethodTransaction(ExtractMethod em) {
+        if (em.getClassCommitData() != null){
+            session.save(em);
+            for(ClassCommitData ccd: em.getClassCommitData()){
+                session.save(ccd);
+            }
+            session.save(em.getRefactoringData());
+            makeTransaction(em);
+        }
+    }
+
+    private void refactoringDataTransaction(RefactoringData rd) {
+        if(rd.getProject() != null){
+            session.save(rd);
+            makeTransaction(rd);
+        }
+    }
+
+    private void projectTransaction(Project p) {
+        if(!p.projectName.isEmpty()){
+            session.save(p);
+            makeTransaction(p);
+        }
+    }
+
+    public void databaseTransaction(Object obj){
+        if (obj instanceof ExtractMethod)
+            extractMethodTransaction((ExtractMethod) obj);
+        else if (obj instanceof RefactoringData)
+            refactoringDataTransaction((RefactoringData) obj);
+        else if (obj instanceof Project)
+            projectTransaction((Project) obj);
     }
 
     public void closeSession(){

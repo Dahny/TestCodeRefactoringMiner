@@ -12,7 +12,7 @@ public class ClassCommitData {
     @Column(name = "classCommitDataid")
     private Long classCommitDataid;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "extractMethodId", nullable = false)
     private ExtractMethod extractMethod;
 
