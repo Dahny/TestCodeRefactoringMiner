@@ -4,8 +4,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
-import java.sql.Ref;
-
 public class DatabaseOperations {
 
     private Session session;
@@ -54,7 +52,7 @@ public class DatabaseOperations {
     }
 
     private void projectTransaction(Project p) {
-        if(!p.projectName.isEmpty()){
+        if(!p.getProjectName().isEmpty()){
             session.save(p);
             makeTransaction(p);
         }
@@ -67,6 +65,7 @@ public class DatabaseOperations {
             refactoringDataTransaction((RefactoringData) obj);
         else if (obj instanceof Project)
             projectTransaction((Project) obj);
+        closeSession();
     }
 
     public void closeSession(){

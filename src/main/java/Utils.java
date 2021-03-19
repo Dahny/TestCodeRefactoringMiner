@@ -1,5 +1,6 @@
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import db.DatabaseOperations;
 import gr.uom.java.xmi.UMLOperation;
 import gr.uom.java.xmi.UMLType;
 import gr.uom.java.xmi.decomposition.AbstractCodeFragment;
@@ -11,6 +12,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.hibernate.SessionFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -77,6 +79,11 @@ public class Utils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void makeDatabaseTransaction(SessionFactory sessionFactory, Object data){
+        DatabaseOperations dbOperator = new DatabaseOperations(sessionFactory);
+        dbOperator.databaseTransaction(data);
     }
 
     public static List reverseIterable(Iterable<RevCommit> iterable){

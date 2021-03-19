@@ -1,24 +1,28 @@
+import db.DatabaseOperations;
 import db.Project;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.hibernate.SessionFactory;
 import org.refactoringminer.api.Refactoring;
 
 import java.util.Set;
 
 public class RefactoringProcessor {
-    public MetricAnalyzer metricAnalyzer;
-    public Repository currentRepository;
-    public Project currentProject;
-    public Logger refactoringLogger = LogManager.getLogger(RefactoringProcessor.class);
-    public final String tempDir = "tmpFiles";
+    private SessionFactory sessionFactory;
+    private Repository currentRepository;
+    private MetricAnalyzer metricAnalyzer;
+    private Project currentProject;
+    private Logger refactoringLogger = LogManager.getLogger(RefactoringProcessor.class);
+    private final String tempDir = "tmpFiles";
 
-    public RefactoringProcessor(Repository repository, MetricAnalyzer metricAnalyzer, Project project){
-        this.metricAnalyzer = metricAnalyzer;
+    public RefactoringProcessor(Repository repository, MetricAnalyzer metricAnalyzer, SessionFactory sessionFactory){
         this.currentRepository = repository;
-        this.currentProject = project;
+        this.metricAnalyzer = metricAnalyzer;
+        this.currentProject = metricAnalyzer.getCurrentProject();
+        this.sessionFactory = sessionFactory;
     }
 
     public void handleRefactoring(Refactoring refactoring, RevCommit commit){
@@ -26,47 +30,23 @@ public class RefactoringProcessor {
         Set<ImmutablePair<String, String>> classesBefore = refactoring.getInvolvedClassesBeforeRefactoring();
 
         // Checking if whether we go through or skip the refactoring
-        checkRefactoring(classesAfter);
-        checkRefactoring(classesBefore);
+        if(checkRefactoring(classesAfter) && checkRefactoring(classesBefore)){
+            // write classes to disk if we are dealing with an Extract Method
+            ImmutablePair<String, String> classInfoAfter = writeFilesToDisk(classesAfter, commit, "/after/");
+            RevCommit commitParent = commit.getParent(0);
+            ImmutablePair<String, String> classInfoBefore = writeFilesToDisk(classesBefore, commitParent, "/before/");
 
-        // write the after classes to local directory
-        ImmutablePair<String, String> classInfoAfter = null;
-        for(ImmutablePair<String, String> classInfo: classesAfter){
-            String file = classInfo.getLeft();
-            classInfoAfter = classInfo;
+            // Analyze the refactoring
+            metricAnalyzer.handleRefactoring(refactoring, commit, classInfoAfter);
+            metricAnalyzer.handleRefactoring(refactoring, commitParent, classInfoBefore);
 
-            try {
-                String source = Utils.readFileFromGit(currentRepository, commit, file);
-                String[] tempSplit = file.split("/");
-                String className = tempSplit[tempSplit.length - 1];
-                Utils.writeFile(tempDir + "/after/" + className, source);
-            } catch(Exception e) {
-                e.printStackTrace();
-                currentProject.addToExceptionCount();
-            }
+            // If refactoring type was in test and of type extract method
+            if(metricAnalyzer.currentExtractMethod != null)
+                Utils.makeDatabaseTransaction(sessionFactory, metricAnalyzer.currentExtractMethod);
+                // if refactoring was in test
+            else if(metricAnalyzer.currentRefactoringData != null)
+                Utils.makeDatabaseTransaction(sessionFactory, metricAnalyzer.currentRefactoringData);
         }
-
-        RevCommit commitParent = commit.getParent(0);
-
-        // write the before classes to local directory
-        ImmutablePair<String, String> classInfoBefore = null;
-        for (ImmutablePair<String, String> classInfo : classesBefore) {
-            String file = classInfo.getLeft();
-            classInfoBefore = classInfo;
-
-            try {
-                String source = Utils.readFileFromGit(currentRepository, commitParent, file);
-                String[] tempSplit = file.split("/");
-                String className = tempSplit[tempSplit.length - 1];
-                Utils.writeFile(tempDir + "/before/" + className, source);
-            } catch(Exception e) {
-                e.printStackTrace();
-                currentProject.addToExceptionCount();
-            }
-        }
-
-        metricAnalyzer.handleRefactoring(refactoring, commit, classInfoAfter);
-        metricAnalyzer.handleRefactoring(refactoring, commitParent, classInfoBefore);
     }
 
     /**
@@ -93,6 +73,33 @@ public class RefactoringProcessor {
         }
         // shouldn't get here
         return false;
+    }
+
+    /**
+     * Write the classes to local directory
+     * @param classes The class file to be written to disk
+     * @param commit The relevant commit of the class file
+     * @param dirName The temp dir name where the class will be stored
+     * @return The info about the class provided by RefMiner
+     */
+    private ImmutablePair<String, String> writeFilesToDisk(Set<ImmutablePair<String, String>> classes,
+                                                           RevCommit commit, String dirName){
+        ImmutablePair<String, String> cInfo = null;
+        for(ImmutablePair<String, String> classInfo: classes){
+            String file = classInfo.getLeft();
+            cInfo = classInfo;
+
+            try {
+                String source = Utils.readFileFromGit(currentRepository, commit, file);
+                String[] tempSplit = file.split("/");
+                String className = tempSplit[tempSplit.length - 1];
+                Utils.writeFile(tempDir + dirName + className, source);
+            } catch(Exception e) {
+                e.printStackTrace();
+                currentProject.addToExceptionCount();
+            }
+        }
+        return cInfo;
     }
 
 }

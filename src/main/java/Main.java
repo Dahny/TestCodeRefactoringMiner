@@ -32,7 +32,7 @@ public class Main {
     public static List<String> repos;
     public static Logger mainLogger;
     public static SessionFactory sessionFactory;
-    public static DatabaseOperations dbOperator;
+    public static RefactoringProcessor refactoringProcessor;
     public static RevCommit currentCommit;
     public static Repository currentRepo;
     public static final String tempRepoDir = "tmp/repo";
@@ -73,10 +73,13 @@ public class Main {
 
             // Add project to database
             Project curProject = new Project(projectName);
-            makeDatabaseTransaction(curProject);
+            Utils.makeDatabaseTransaction(sessionFactory, curProject);
 
             // Init the Analyzer
-            MetricAnalyzer analyzer = new MetricAnalyzer(currentRepo, curProject, git);
+            MetricAnalyzer analyzer = new MetricAnalyzer(curProject, git);
+
+            //Init the RefactoringProcessor
+            refactoringProcessor = new RefactoringProcessor(currentRepo, analyzer, sessionFactory);
 
             while (walker.iterator().hasNext()) {
                 try {
@@ -92,16 +95,7 @@ public class Main {
                         @Override
                         public void handle(String commitId, List<Refactoring> refactorings) {
                             for (Refactoring ref : refactorings) {
-                                analyzer.handleRefactoring(ref, commitId, currentCommit);
-
-
-
-                                // If refactoring type was in test and of type extract method
-                                if(analyzer.currentExtractMethod != null)
-                                    makeDatabaseTransaction(analyzer.currentExtractMethod);
-                                // if refactoring was in test
-                                else if(analyzer.currentRefactoringData != null)
-                                    makeDatabaseTransaction(analyzer.currentRefactoringData);
+                                refactoringProcessor.handleRefactoring(ref, currentCommit);
                             }
                         }
                     });
@@ -131,13 +125,6 @@ public class Main {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public static void makeDatabaseTransaction(Object data){
-        mainLogger.debug("Starting database transaction");
-        dbOperator = new DatabaseOperations(sessionFactory);
-        dbOperator.databaseTransaction(data);
-        mainLogger.debug("Database transaction is done, session is closed");
     }
 
     public static void setupDatabaseConfig(){

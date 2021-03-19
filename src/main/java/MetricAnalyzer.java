@@ -33,20 +33,18 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class MetricAnalyzer {
-    private Repository repository;
     private Project project;
     private Git git;
-    private RefactoringData currentRefactoringData;
-    private ExtractMethod currentExtractMethod;
-    private List<ClassCommitData> currentClassCommitData;
+    public RefactoringData currentRefactoringData;
+    public ExtractMethod currentExtractMethod;
+    public List<ClassCommitData> currentClassCommitData;
     private Logger analyzerLogger = LogManager.getLogger(MetricAnalyzer.class);
     public final String tempDir = "tmpFiles";
     public final String tempRepoDir = "tmp/repo";
     public final String extractedLinesFileName = "ExtractedLines.Java";
 
 
-    public MetricAnalyzer(Repository repo, Project curProject, Git git){
-        this.repository = repo;
+    public MetricAnalyzer(Project curProject, Git git){
         this.project = curProject;
         this.git = git;
     }
@@ -213,5 +211,9 @@ public class MetricAnalyzer {
                 }
             }
         }
+    }
+
+    public Project getCurrentProject(){
+        return project;
     }
 }
