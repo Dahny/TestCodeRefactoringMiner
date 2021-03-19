@@ -20,25 +20,28 @@ public class RefactoringData {
     private Project project;
 
     @Column(name = "fileLoc")
-    public String fileLoc;
+    private String fileLoc;
 
     @Column(name = "className")
-    public String className;
+    private String className;
 
     @Column(name = "commitId")
-    public String commitId;
+    private String commitId;
+
+    @Column(name = "parentCommitId")
+    private String parentCommitId;
 
     @Column(name = "refactoringType")
-    public String refactoringType;
+    private String refactoringType;
 
     @Column(name = "refactoringSummary")
-    public String refactoringSummary;
+    private String refactoringSummary;
 
     @Column(name = "commitMessage")
-    public String commitMessage;
+    private String commitMessage;
 
     @Column(name = "commitDate")
-    public Date commitDate;
+    private Date commitDate;
 
 
     public RefactoringData() {}
@@ -68,5 +71,69 @@ public class RefactoringData {
 
     public Project getProject(){
         return project;
+    }
+
+    public String getFileLoc() {
+        return fileLoc;
+    }
+
+    public void setFileLoc(String fileLoc) {
+        this.fileLoc = fileLoc;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getCommitId() {
+        return commitId;
+    }
+
+    public void setCommitId(String commitId) {
+        this.commitId = commitId;
+    }
+
+    public String getParentCommitId() {
+        return parentCommitId;
+    }
+
+    public void setParentCommitId(String parentCommitId) {
+        this.parentCommitId = parentCommitId;
+    }
+
+    public String getRefactoringType() {
+        return refactoringType;
+    }
+
+    public void setRefactoringType(String refactoringType) {
+        this.refactoringType = refactoringType;
+    }
+
+    public String getRefactoringSummary() {
+        return refactoringSummary;
+    }
+
+    public void setRefactoringSummary(String refactoringSummary) {
+        this.refactoringSummary = refactoringSummary;
+    }
+
+    public String getCommitMessage() {
+        return commitMessage;
+    }
+
+    public void setCommitMessage(String commitMessage) {
+        this.commitMessage = commitMessage;
+    }
+
+    public Date getCommitDate() {
+        return commitDate;
+    }
+
+    public void setCommitDate(Date commitDate) {
+        this.commitDate = commitDate;
     }
 }

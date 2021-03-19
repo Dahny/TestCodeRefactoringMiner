@@ -14,15 +14,42 @@ public class Project {
     @OneToMany(mappedBy = "project")
     private Set<RefactoringData> RefactoringData;
 
+    @Column(name="metaDataId")
+    @JoinColumn(name="metaDataId")
+    private MetaData metaData;
+
     @Column(name = "projectName")
-    public String projectName;
+    private String projectName;
 
     // TODO add more project info
 
-    public Project (){}
+    public Project (){ }
 
-    public Project(String name){
+    public Project(String name) {
         this.projectName = name;
     }
 
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public MetaData getMetaData() {
+        return metaData;
+    }
+
+    public void setMetaData(MetaData metaData) {
+        this.metaData = metaData;
+    }
+
+    public void addToSkippedRefactoringCount() {
+        metaData.addToSkippedRefactoringCount();
+    }
+
+    public void addToExceptionCount() {
+        metaData.addToExceptionCount();
+    }
 }

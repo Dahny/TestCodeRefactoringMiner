@@ -33,13 +33,13 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class MetricAnalyzer {
-    public Repository repository;
-    public Project project;
-    public Git git;
-    public RefactoringData currentRefactoringData;
-    public ExtractMethod currentExtractMethod;
-    public List<ClassCommitData> currentClassCommitData;
-    public Logger analyzerLogger = LogManager.getLogger(MetricAnalyzer.class);
+    private Repository repository;
+    private Project project;
+    private Git git;
+    private RefactoringData currentRefactoringData;
+    private ExtractMethod currentExtractMethod;
+    private List<ClassCommitData> currentClassCommitData;
+    private Logger analyzerLogger = LogManager.getLogger(MetricAnalyzer.class);
     public final String tempDir = "tmpFiles";
     public final String tempRepoDir = "tmp/repo";
     public final String extractedLinesFileName = "ExtractedLines.Java";
@@ -51,52 +51,51 @@ public class MetricAnalyzer {
         this.git = git;
     }
 
+
     /**
      * @param refactoring The refactoring to be analyzed
-     * @param commitId The relevant commitId of the refactoring
+     * @param currentCommit The relevant commit of the refactroing
+     * @param classInfo the relevant class information of the refactoring
      */
-    public void handleRefactoring(Refactoring refactoring, String commitId, RevCommit currentCommit ){
+    public void handleRefactoring(Refactoring refactoring, RevCommit currentCommit,
+                                  ImmutablePair<String, String> classInfo){
+
+        // Reset global vars
         currentExtractMethod = null;
         currentRefactoringData = null;
         currentClassCommitData = null;
-        Set<ImmutablePair<String, String>> involvedClasses = refactoring.getInvolvedClassesAfterRefactoring();
 
-        for (ImmutablePair<String, String> classInfo : involvedClasses) {
-            // Check if it is a test file
-            if(Utils.isTest(classInfo.getLeft())) {
-                analyzerLogger.debug(String.format("involved classes are: %s", classInfo.getLeft()));
-                analyzerLogger.debug(String.format("commitdate: %s", currentCommit.getCommitTime()));
+        currentRefactoringData = new RefactoringData(classInfo.getLeft(), classInfo.getRight(),
+                currentCommit.getName(), refactoring.toString(),
+                refactoring.getRefactoringType().getDisplayName(), currentCommit.getFullMessage(),
+                currentCommit.getAuthorIdent().getWhen(), project);
 
-                currentRefactoringData = new RefactoringData(classInfo.getLeft(), classInfo.getRight(),
-                        currentCommit.getName(), refactoring.toString(),
-                        refactoring.getRefactoringType().getDisplayName(), currentCommit.getFullMessage(),
-                        currentCommit.getAuthorIdent().getWhen(), project);
+        // If the refactoring is an extract method we get the relevant data
+        // Else we just save it as a 'default' refactoring
+        if (refactoring.getRefactoringType().getDisplayName().equals("Extract Method")) {
+            analyzerLogger.debug(String.format("Extract Method found on commit: %s", currentCommit.getName()));
+            currentExtractMethod = new ExtractMethod(currentRefactoringData);
+            // cast refactoring as ExtractOperationRefactoring
+            ExtractOperationRefactoring extractRefactoring = (ExtractOperationRefactoring) refactoring;
 
-                // If the refactoring is an extract method we get the relevant data
-                // Else we just save it as a 'default' refactoring
-                if (refactoring.getRefactoringType().getDisplayName().equals("Extract Method")) {
-                    analyzerLogger.debug(String.format("Extract Method found on commit: %s", commitId));
-                    currentExtractMethod = new ExtractMethod(currentRefactoringData);
-                    // cast refactoring as ExtractOperationRefactoring
-                    ExtractOperationRefactoring extractRefactoring = (ExtractOperationRefactoring) refactoring;
+            // Analyze the extracted piece of code
+            analyzeExtraction(extractRefactoring);
 
-                    // Analyze the extracted piece of code
-                    analyzeExtraction(extractRefactoring);
+            // Analyze the metrics of the related class and the extracted piece of code
+            analyzeMetrics(extractRefactoring.getSourceOperationAfterExtraction().getName(),
+                    extractRefactoring.getExtractedCodeFragmentsToExtractedOperation());
 
-                    // Analyze the metrics of the related class and the extracted piece of code
-                    analyzeMetrics(extractRefactoring.getSourceOperationAfterExtraction().getName(),
-                            extractRefactoring.getExtractedCodeFragmentsToExtractedOperation());
-
-                    // Analyze the lifetime of the related class
-                    analyzeLifetimeClass();
-                }
-            }
-            else{
-                analyzerLogger.debug("Skipping " + refactoring.getName() + " because it is not a test Refactoring");
-                break;
-            }
+            // Analyze the lifetime of the related class
+            analyzeLifetimeClass();
         }
+
+
     }
+
+    public void fetchMetrics(){
+
+    }
+
 
     public void analyzeMetrics(String methodName, Set<AbstractCodeFragment> extractedLines){
         boolean useJars = false;
@@ -114,7 +113,7 @@ public class MetricAnalyzer {
         }
 
         // Fetch refactoring class file
-        String classLocation = currentExtractMethod.getRefactoringData().fileLoc;
+        String classLocation = currentExtractMethod.getRefactoringData().getFileLoc();
         String[] tempSplit = classLocation.split("/");
         String className = tempSplit[tempSplit.length - 1];
         Path source = new File(tempRepoDir + "/" + classLocation).toPath().toAbsolutePath();
@@ -169,7 +168,7 @@ public class MetricAnalyzer {
     //TODO Check if the file is moved instead of created
     public void analyzeLifetimeClass(){
         currentClassCommitData = new ArrayList<>();
-        String classPath = currentExtractMethod.getRefactoringData().fileLoc;
+        String classPath = currentExtractMethod.getRefactoringData().getFileLoc();
         Iterable<RevCommit> commits = null;
         try {
             commits =  git.log().addPath(classPath).call();
@@ -184,7 +183,7 @@ public class MetricAnalyzer {
             currentClassCommitData.add(new ClassCommitData(
                     commitDate,
                     i==0,
-                    currentExtractMethod.getRefactoringData().commitDate.equals(commitDate)));
+                    currentExtractMethod.getRefactoringData().getCommitDate().equals(commitDate)));
         }
     }
 

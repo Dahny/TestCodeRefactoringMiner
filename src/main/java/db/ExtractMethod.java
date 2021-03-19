@@ -1,7 +1,6 @@
 package db;
 
 import javax.persistence.*;
-import java.sql.Ref;
 import java.util.Set;
 
 @Entity
@@ -19,6 +18,10 @@ public class ExtractMethod {
 
     @OneToMany(fetch=FetchType.EAGER, mappedBy = "extractMethod")
     private Set<ClassCommitData> classCommitData;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "refactoringClassMetricsId")
+    private RefactoringClassMetrics refactoringClassMetricsId;
 
     @Column(name = "methodName")
     public String methodName;

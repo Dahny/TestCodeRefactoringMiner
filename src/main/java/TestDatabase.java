@@ -37,7 +37,7 @@ public class TestDatabase {
             System.out.println(ccd.toString());
         em.setClassCommitData(new HashSet<>(classCommitData));
 
-        dbOperator.makeTransaction(em);
+        dbOperator.databaseTransaction(em);
 
 //        Path tempDirWithPrefix = null;
 //        try {

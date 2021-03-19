@@ -10,8 +10,10 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.treewalk.TreeWalk;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +53,7 @@ public class Utils {
         return filePath.toLowerCase().contains("test");
     }
 
+
     public static List<String> readProjects() {
         // Fetch the repos from file
         List<String> repos = new ArrayList<>();
@@ -83,6 +86,25 @@ public class Utils {
         return list;
     }
 
+    public static String readFileFromGit (Repository repo, RevCommit commit, String filepath) throws IOException {
+        try (TreeWalk walk = TreeWalk.forPath(repo, filepath, commit.getTree())) {
+            if (walk != null) {
+                byte[] bytes = repo.open(walk.getObjectId(0)).getBytes();
+                return new String(bytes, StandardCharsets.UTF_8);
+            } else {
+                throw new IllegalArgumentException("No path found in " + commit.getName() + ": " + filepath);
+            }
+        }
+    }
+
+    public static String readFileFromGit (Repository repo, String commit, String filepath) throws IOException {
+        ObjectId commitId = ObjectId.fromString(commit);
+        RevWalk revWalk = new RevWalk(repo);
+        RevCommit revCommit = revWalk.parseCommit( commitId );
+
+        return readFileFromGit(repo, revCommit, filepath);
+    }
+
 
     public static File createCustomJavaFile(String path, Set<AbstractCodeFragment> extractedLines) {
         try {
@@ -112,6 +134,18 @@ public class Utils {
         }
         //this should never happen
         return null;
+    }
+
+    //Write the content to a new file at the given path. Creates a new directory at the path if necessary.
+    public static void writeFile(String filePath, Object content) throws FileNotFoundException {
+        new File(dirsOnly(filePath)).mkdirs();
+        PrintStream ps = new PrintStream(filePath);
+        ps.print(content);
+        ps.close();
+    }
+
+    public static String dirsOnly (String fileName) {
+        return new File(fileName).getParent();
     }
 
 }

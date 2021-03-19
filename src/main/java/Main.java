@@ -83,27 +83,18 @@ public class Main {
                     currentCommit = walker.next();
                     mainLogger.info("currentCommit: " + currentCommit.getName());
                     mainLogger.info("commitMessage: " + currentCommit.getFullMessage());
-                    mainLogger.info("commit: " + currentCommit.getType());
-                    mainLogger.info("parent count: " + currentCommit.getParentCount());
-                    mainLogger.info("parents length: " + currentCommit.getParents().length);
 
                     // If first commit or merge commit, skip
                     if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
                         continue;
-
-                    // Check if git status okay for next checkout
-                    checkGitStatus(git);
-
-                    //git.checkout(currentRepo, currentCommit.getName());
-                    git.checkout().setName(currentCommit.getName()).call();
-
-                    checkGitStatus(git);
 
                     miner.detectAtCommit(currentRepo, currentCommit.getName(), new RefactoringHandler() {
                         @Override
                         public void handle(String commitId, List<Refactoring> refactorings) {
                             for (Refactoring ref : refactorings) {
                                 analyzer.handleRefactoring(ref, commitId, currentCommit);
+
+
 
                                 // If refactoring type was in test and of type extract method
                                 if(analyzer.currentExtractMethod != null)
