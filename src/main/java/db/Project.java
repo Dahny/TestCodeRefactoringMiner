@@ -14,8 +14,7 @@ public class Project {
     @OneToMany(mappedBy = "project")
     private Set<RefactoringData> RefactoringData;
 
-    @Column(name="metaDataId")
-    @JoinColumn(name="metaDataId")
+    @OneToOne(mappedBy = "project")
     private MetaData metaData;
 
     @Column(name = "projectName")

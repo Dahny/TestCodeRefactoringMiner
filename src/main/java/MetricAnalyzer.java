@@ -51,13 +51,15 @@ public class MetricAnalyzer {
 
 
     /**
+     * This method will capture the metadata of the test refactoring and analyze the relevant class file
+     * if the refactoring is a Extract Method.
+     *
      * @param refactoring The refactoring to be analyzed
      * @param currentCommit The relevant commit of the refactroing
      * @param classInfo the relevant class information of the refactoring
      */
-    public void handleRefactoring(Refactoring refactoring, RevCommit currentCommit,
+    public void handleTestRefactoring(Refactoring refactoring, RevCommit currentCommit,
                                   ImmutablePair<String, String> classInfo){
-
         // Reset global vars
         currentExtractMethod = null;
         currentRefactoringData = null;
@@ -70,7 +72,7 @@ public class MetricAnalyzer {
 
         // If the refactoring is an extract method we get the relevant data
         // Else we just save it as a 'default' refactoring
-        if (refactoring.getRefactoringType().getDisplayName().equals("Extract Method")) {
+        if (Utils.checkRefactoringType(refactoring, "Extract Method")) {
             analyzerLogger.debug(String.format("Extract Method found on commit: %s", currentCommit.getName()));
             currentExtractMethod = new ExtractMethod(currentRefactoringData);
             // cast refactoring as ExtractOperationRefactoring
@@ -86,12 +88,6 @@ public class MetricAnalyzer {
             // Analyze the lifetime of the related class
             analyzeLifetimeClass();
         }
-
-
-    }
-
-    public void fetchMetrics(){
-
     }
 
 

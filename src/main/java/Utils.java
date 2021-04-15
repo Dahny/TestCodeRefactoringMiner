@@ -13,13 +13,11 @@ import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.hibernate.SessionFactory;
+import org.refactoringminer.api.Refactoring;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Utils {
 
@@ -43,6 +41,10 @@ public class Utils {
         }
         // This should never happen
         return null;
+    }
+
+    public static boolean checkRefactoringType(Refactoring refactoring, String type) {
+        return refactoring.getRefactoringType().getDisplayName().equals(type);
     }
 
 

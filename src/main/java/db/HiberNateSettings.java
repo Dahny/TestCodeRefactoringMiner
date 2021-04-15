@@ -34,9 +34,12 @@ public class HiberNateSettings {
                 configuration.setProperties(settings);
 
                 configuration.addAnnotatedClass(ClassCommitData.class);
+                configuration.addAnnotatedClass(RefactoringMethodMetrics.class);
+                configuration.addAnnotatedClass(RefactoringClassMetrics.class);
                 configuration.addAnnotatedClass(ExtractMethod.class);
                 configuration.addAnnotatedClass(RefactoringData.class);
                 configuration.addAnnotatedClass(Project.class);
+                configuration.addAnnotatedClass(MetaData.class);
 
                 ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
                         .applySettings(configuration.getProperties()).build();

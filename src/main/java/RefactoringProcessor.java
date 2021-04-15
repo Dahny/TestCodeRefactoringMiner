@@ -25,20 +25,42 @@ public class RefactoringProcessor {
         this.sessionFactory = sessionFactory;
     }
 
+
+    /**
+     * This method will analyze the relevant classes of the refactoring using the current and parent commit
+     * It will check if the refactoring is a test refactoring and if there is only 1 class involved (for now only
+     * working with one)
+     * Than it will determine if we will analyze the class files or if we just note down the metadata based on the
+     * fact whether it is a Extract Method or nor
+     *
+     * @param refactoring The refactoring to process
+     * @param commit The relevant commit of the refactoring
+     */
     public void handleRefactoring(Refactoring refactoring, RevCommit commit){
         Set<ImmutablePair<String, String>> classesAfter = refactoring.getInvolvedClassesAfterRefactoring();
         Set<ImmutablePair<String, String>> classesBefore = refactoring.getInvolvedClassesBeforeRefactoring();
 
         // Checking if whether we go through or skip the refactoring
-        if(checkRefactoring(classesAfter) && checkRefactoring(classesBefore)){
-            // write classes to disk if we are dealing with an Extract Method
-            ImmutablePair<String, String> classInfoAfter = writeFilesToDisk(classesAfter, commit, "/after/");
+        if(checkIfTestRefactoring(classesAfter) && checkIfTestRefactoring(classesBefore)){
+            //fetch the parent commit for the before classes
             RevCommit commitParent = commit.getParent(0);
-            ImmutablePair<String, String> classInfoBefore = writeFilesToDisk(classesBefore, commitParent, "/before/");
+
+            //For now we are only working with refactorings involving one class at the time
+            ImmutablePair<String, String> classInfoAfter;
+            ImmutablePair<String, String> classInfoBefore;
+
+            // write classes to disk if we are dealing with an Extract Method
+            if(refactoring.getRefactoringType().getDisplayName() == "Extract Method"){
+                classInfoAfter = writeFilesToDisk(classesAfter, commit, "/after/");
+                classInfoBefore = writeFilesToDisk(classesBefore, commitParent, "/before/");
+            } else {
+                classInfoAfter = classesAfter.iterator().next();
+                classInfoBefore = classesBefore.iterator().next();
+            }
 
             // Analyze the refactoring
-            metricAnalyzer.handleRefactoring(refactoring, commit, classInfoAfter);
-            metricAnalyzer.handleRefactoring(refactoring, commitParent, classInfoBefore);
+            metricAnalyzer.handleTestRefactoring(refactoring, commit, classInfoAfter);
+            metricAnalyzer.handleTestRefactoring(refactoring, commitParent, classInfoBefore);
 
             // If refactoring type was in test and of type extract method
             if(metricAnalyzer.currentExtractMethod != null)
@@ -54,7 +76,7 @@ public class RefactoringProcessor {
      * @param classes The classes to be checked
      * @return whether it makes sense to anaylze this refactoring or skip it
      */
-    public boolean checkRefactoring(Set<ImmutablePair<String, String>> classes) {
+    public boolean checkIfTestRefactoring(Set<ImmutablePair<String, String>> classes) {
         if (classes.size() > 1) {
             refactoringLogger.info("Skipping refactoring because of multiple classes involved");
             currentProject.addToSkippedRefactoringCount();

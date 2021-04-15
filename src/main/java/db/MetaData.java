@@ -10,8 +10,8 @@ public class MetaData {
     @Column(name = "metaDataId")
     private Long metaDataId;
 
-    @OneToOne
-    @Column(name="project")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "project")
     private Project project;
 
     @Column(name="skippedRefactoringCount")
@@ -31,5 +31,13 @@ public class MetaData {
 
     public void addToExceptionCount() {
         exceptionCount += 1;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 }

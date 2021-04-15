@@ -11,8 +11,15 @@ public class RefactoringMethodMetrics {
     @Column(name = "RefactoringMethodMetricsId")
     private Long RefactoringMethodMetricsId;
 
-    @OneToOne(mappedBy = "refactoringMethodMetrics")
-    private ExtractMethod extractMethodId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "extractMethodId", nullable = false)
+    private ExtractMethod extractMethod;
+
+    @Column(name="isBefore")
+    private boolean isBefore;
+
+    @Column(name="methodName")
+    private String methodName;
 
     @Column(name="loc")
     private int loc;
@@ -59,4 +66,25 @@ public class RefactoringMethodMetrics {
     public void setInvolvesAssertion(boolean involvesAssertion) {
         this.involvesAssertion = involvesAssertion;
     }
+
+    public String getName() {
+        return methodName;
+    }
+
+    public void setMethodName(String name) {
+        this.methodName = name;
+    }
+
+    public boolean isBefore() {
+        return isBefore;
+    }
+
+    public void setBefore(boolean before) {
+        this.isBefore = before;
+    }
+
+    public void setExtractMethod(ExtractMethod extractMethod) {
+        this.extractMethod = extractMethod;
+    }
+
 }

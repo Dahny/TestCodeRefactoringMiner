@@ -11,11 +11,12 @@ public class RefactoringClassMetrics {
     @Column(name = "refactoringClassMetricsId")
     private Long refactoringClassMetricsId;
 
-    @OneToOne(mappedBy = "refactoringClassMetrics")
-    private ExtractMethod extractMethodId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "extractMethodId", nullable = false)
+    private ExtractMethod extractMethod;
 
-    @Column(name="before")
-    private boolean before;
+    @Column(name="isBefore")
+    private boolean isBefore;
 
     @Column(name= "wmc")
     private int wmc;
@@ -76,18 +77,15 @@ public class RefactoringClassMetrics {
     }
 
     public boolean isBefore() {
-        return before;
+        return isBefore;
     }
 
     public void setBefore(boolean before) {
-        this.before = before;
+        this.isBefore = before;
     }
 
-    public ExtractMethod getExtractMethodId() {
-        return extractMethodId;
+    public void setExtractMethod(ExtractMethod extractMethod) {
+        this.extractMethod = extractMethod;
     }
 
-    public void setExtractMethodId(ExtractMethod extractMethodId) {
-        this.extractMethodId = extractMethodId;
-    }
 }

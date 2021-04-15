@@ -19,9 +19,11 @@ public class ExtractMethod {
     @OneToMany(fetch=FetchType.EAGER, mappedBy = "extractMethod")
     private Set<ClassCommitData> classCommitData;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "refactoringClassMetricsId")
-    private RefactoringClassMetrics refactoringClassMetricsId;
+    @OneToMany(fetch=FetchType.EAGER, mappedBy = "extractMethod")
+    private Set<RefactoringClassMetrics> refactoringClassMetrics;
+
+    @OneToMany(fetch=FetchType.EAGER, mappedBy = "extractMethod")
+    private Set<RefactoringMethodMetrics> refactoringMethodMetrics;
 
     @Column(name = "methodName")
     public String methodName;
@@ -89,4 +91,20 @@ public class ExtractMethod {
     }
 
     public Set<ClassCommitData> getClassCommitData() { return this.classCommitData; }
+
+    public Set<RefactoringClassMetrics> getRefactoringClassMetrics() {
+        return refactoringClassMetrics;
+    }
+
+    public void setRefactoringClassMetrics(Set<RefactoringClassMetrics> refactoringClassMetrics) {
+        this.refactoringClassMetrics = refactoringClassMetrics;
+    }
+
+    public Set<RefactoringMethodMetrics> getRefactoringMethodMetrics() {
+        return refactoringMethodMetrics;
+    }
+
+    public void setRefactoringMethodMetrics(Set<RefactoringMethodMetrics> refactoringMethodMetrics) {
+        this.refactoringMethodMetrics = refactoringMethodMetrics;
+    }
 }

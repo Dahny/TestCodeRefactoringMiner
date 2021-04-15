@@ -57,7 +57,7 @@ public class Main {
             mainLogger.log(Level.INFO, "done cloning " + projectName);
             if(currentRepo == null){
                 // This should never happen
-                mainLogger.info("Skipping " + projectName + "because fetching the repo caused an exception");
+                mainLogger.info("Skipping " + projectName + " because fetching the repo caused an exception");
                 Utils.removeDirectory(tempRepoDir);
                 continue;
             }
@@ -66,7 +66,7 @@ public class Main {
 
             RevWalk walker = Utils.setupRevWalker(currentRepo);
             if(walker == null){
-                mainLogger.info("Skipping " + projectName + "because creating the walker caused an exception");
+                mainLogger.info("Skipping " + projectName + " because creating the walker caused an exception");
                 Utils.removeDirectory(tempRepoDir);
                 continue;
             }
@@ -81,6 +81,7 @@ public class Main {
             //Init the RefactoringProcessor
             refactoringProcessor = new RefactoringProcessor(currentRepo, analyzer, sessionFactory);
 
+            // Start walking through each commit
             while (walker.iterator().hasNext()) {
                 try {
                     currentCommit = walker.next();
@@ -91,9 +92,11 @@ public class Main {
                     if (currentCommit.getParentCount() == 0 || currentCommit.getParentCount() > 1)
                         continue;
 
+                    // Check the commit for any refactorings
                     miner.detectAtCommit(currentRepo, currentCommit.getName(), new RefactoringHandler() {
                         @Override
                         public void handle(String commitId, List<Refactoring> refactorings) {
+                            // If ant refactoring is found, process it
                             for (Refactoring ref : refactorings) {
                                 refactoringProcessor.handleRefactoring(ref, currentCommit);
                             }
